@@ -1,0 +1,8 @@
+#theme = Cobalt Next Dark
+theme = Oxocarbon
+font-family = FiraCode Nerd Font Mono
+font-size = 12
+gtk-titlebar = true
+window-padding-color = extend
+keybind = performable:ctrl+c=copy_to_clipboard
+keybind = f11=toggle_fullscreen
