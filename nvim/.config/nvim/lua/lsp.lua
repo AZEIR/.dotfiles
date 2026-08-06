@@ -1,4 +1,5 @@
 vim.lsp.enable({
+	"asm_lsp",
 	"basedpyright",
 	"clangd",
 	"cssls",

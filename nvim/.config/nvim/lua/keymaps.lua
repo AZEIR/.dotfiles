@@ -97,3 +97,17 @@ Map("n", "-", "<cmd>Oil --float<CR>", { desc = "Open parent directory in float" 
 Map("n", "<leader>cf", function()
 	require("conform").format({ async = true, lsp_format = "fallback" })
 end, { desc = "Format current buffer" })
+
+-- ---------------------------------------------------------------------------
+-- BUILD & QUICKFIX
+-- ---------------------------------------------------------------------------
+
+Map("n", "<leader>cm", function()
+	vim.cmd("silent make!")
+	if #vim.fn.getqflist() > 0 then
+		vim.cmd("cwindow")
+	end
+end, { desc = "Build project (:make)" })
+Map("n", "<leader>cq", "<cmd>copen<CR>", { desc = "Open build errors" })
+Map("n", "<leader>cn", "<cmd>cnext<CR>", { desc = "Next build error" })
+Map("n", "<leader>cp", "<cmd>cprevious<CR>", { desc = "Previous build error" })

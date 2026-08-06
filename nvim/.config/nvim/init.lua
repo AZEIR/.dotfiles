@@ -12,5 +12,6 @@ else
 	require("configs")
 	require("lsp")
 	require("plugin-configs")
+	require("debugger")
 	require("keymaps")
 end

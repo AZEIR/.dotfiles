@@ -63,10 +63,13 @@ safe_setup("nvim-autopairs", {})
 -- Syntax Highlighting
 -- ---------------------------------------------------------------------------
 
--- Treesitter
-safe_setup("nvim-treesitter.configs", {
-	ensure_installed = {
+-- Treesitter (current Neovim 0.12 API)
+local treesitter_ok, treesitter = pcall(require, "nvim-treesitter")
+if treesitter_ok then
+	local parsers = {
+		"asm",
 		"c",
+		"cpp",
 		"lua",
 		"vim",
 		"vimdoc",
@@ -78,14 +81,33 @@ safe_setup("nvim-treesitter.configs", {
 		"javascript",
 		"typescript",
 		"tsx",
-	},
-	auto_install = true,
-	highlight = {
-		enable = true,
-		-- Disable standard vim regex highlighting to save CPU and prevent weird color clashing
-		additional_vim_regex_highlighting = false,
-	},
-})
+	}
+
+	treesitter.setup({})
+	treesitter.install(parsers)
+
+	vim.api.nvim_create_autocmd("FileType", {
+		desc = "Enable Tree-sitter highlighting",
+		pattern = {
+			"asm",
+			"c",
+			"cpp",
+			"lua",
+			"vim",
+			"vimdoc",
+			"markdown",
+			"python",
+			"html",
+			"css",
+			"javascript",
+			"typescript",
+			"typescriptreact",
+		},
+		callback = function()
+			pcall(vim.treesitter.start)
+		end,
+	})
+end
 
 -- ---------------------------------------------------------------------------
 -- Formatting
