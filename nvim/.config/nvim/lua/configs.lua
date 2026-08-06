@@ -29,7 +29,7 @@ vim.o.showtabline = 1 -- Show tab bar only if there are at least two
 -- General Logic
 vim.o.wrap = false -- Don't wrap long lines
 vim.o.swapfile = false -- Don't use swapfiles
-vim.o.clipboard = vim.env.SSH_TTY and "" or "unnamedplus" -- Sync with system clipboard
+vim.o.clipboard = "unnamedplus" -- Sync with system clipboard
 
 -- ---------------------------------------------------------------------------
 -- COMPLETION & POP-UP MENU
