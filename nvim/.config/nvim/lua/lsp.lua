@@ -1,12 +1,18 @@
-vim.lsp.enable({
-	"asm_lsp",
+local servers = {
 	"basedpyright",
 	"clangd",
 	"cssls",
 	"html",
 	"lua_ls",
 	"ts_ls",
-})
+}
+
+-- asm-lsp is optional because Mason needs Cargo to build it from source.
+if vim.fn.executable("asm-lsp") == 1 then
+	table.insert(servers, "asm_lsp")
+end
+
+vim.lsp.enable(servers)
 
 -- <C-w-d> for diagnostic
 

@@ -1,0 +1,102 @@
+name: ubuntu-kvm
+description: "Development environment mapped from Vagrantfile"
+config:
+  limits.cpu: "2"
+  limits.memory: 4GiB
+  security.nesting: "true"
+
+  cloud-init.user-data: |
+    #cloud-config
+    package_update: true
+    package_upgrade: true
+
+    packages:
+      - build-essential
+      - gcc
+      - g++
+      - gdb
+      - valgrind
+      - make
+      - cmake
+      - cargo
+      - nasm
+      - python3
+      - python3-pip
+      - python3-venv
+      - nodejs
+      - npm
+      - luarocks
+      - stow
+      - git
+      - zsh
+      - bat
+      - curl
+      - wget
+      - ripgrep
+      - fd-find
+      - unzip
+      - xauth
+      - xclip
+      - wl-clipboard
+
+    write_files:
+      - path: /etc/apt/apt.conf.d/99force-ipv4
+        content: |
+          Acquire::ForceIPv4 "true";
+
+    runcmd:
+      # 1. Wait for active network connection
+      - while ! ping -c 1 -W 1 github.com; do sleep 2; done
+
+      # 2. Re-link system paths for bat and fd
+      - ln -sf /usr/bin/batcat /usr/local/bin/bat
+      - ln -sf /usr/bin/fdfind /usr/local/bin/fd
+
+      # 3. Install latest fzf binary (>= 0.48.0 required for 'fzf --zsh')
+      - |
+        FZF_URL=$(curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep "browser_download_url.*linux_amd64.tar.gz" | cut -d '"' -f 4)
+        curl -sSL "$FZF_URL" | tar -xz -C /usr/local/bin
+
+      # 4. Install latest stable Neovim binary
+      - mkdir -p /opt
+      - wget -O /tmp/nvim.tar.gz https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+      - tar -C /opt -xzf /tmp/nvim.tar.gz
+      - ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+      - rm -f /tmp/nvim.tar.gz
+
+      # 5. Install Starship prompt globally
+      - wget -O /tmp/starship-install.sh https://starship.rs/install.sh
+      - sh /tmp/starship-install.sh -y
+      - rm -f /tmp/starship-install.sh
+
+      # 6. Change default shell to Zsh for ubuntu user
+      - chsh -s /usr/bin/zsh ubuntu
+
+      # 7. Clone Dotfiles repo and Stow packages as 'ubuntu' user
+      - |
+        su - ubuntu -c '
+          set -e
+          DOTFILES_REPO="https://github.com/AZEIR/dotfiles.git"
+
+          if [ ! -d "$HOME/.dotfiles" ]; then
+            git clone "$DOTFILES_REPO" "$HOME/.dotfiles"
+          fi
+
+          if [ -d "$HOME/.dotfiles" ]; then
+            cd "$HOME/.dotfiles"
+            for dir in */; do
+              pkg="${dir%/}"
+              if [ -d "$pkg" ] && [[ "$pkg" != .* ]]; then
+                stow --no-folding --adopt --target="$HOME" "$pkg"
+              fi
+            done
+            git reset --hard HEAD
+          fi
+        '
+
+      # 8. Headlessly trigger Neovim plugin sync (Lazy.nvim / Mason)
+      - su - ubuntu -c 'nvim --headless "+Lazy! sync" +qa 2>/dev/null || true'
+
+      # 9. Create user workspace and enforce ownership
+      - mkdir -p /home/ubuntu/Code
+      - chown -R ubuntu:ubuntu /home/ubuntu

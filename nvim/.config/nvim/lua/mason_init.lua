@@ -4,7 +4,6 @@ if not status_ok then
 end
 
 local tools = {
-	"asm-lsp",
 	"basedpyright",
 	"beautysh",
 	"djlint",
@@ -26,8 +25,15 @@ local tools = {
 	"shellcheck",
 	"taplo",
 	"typescript-language-server",
+	"tree-sitter-cli",
 	"yamlfmt",
 }
+
+-- Mason builds asm-lsp from source, so only request it when Rust is available.
+-- Assembly parsing and debugging still work without this optional language server.
+if vim.fn.executable("cargo") == 1 then
+	table.insert(tools, "asm-lsp")
+end
 
 mason.setup({})
 
@@ -40,20 +46,25 @@ local mr = require("mason-registry")
 
 local function ensure_installed()
 	for _, tool in ipairs(tools) do
-		if mr.has_package(tool) then
-			local p = mr.get_package(tool)
-			if not p:is_installed() then
-				vim.notify("Mason: Installing " .. tool .. "...", vim.log.levels.INFO)
+		local tool_name = tool
+		if mr.has_package(tool_name) then
+			local p = mr.get_package(tool_name)
+			local available_on_path = tool_name == "tree-sitter-cli" and vim.fn.executable("tree-sitter") == 1
+			if not p:is_installed() and not available_on_path then
+				vim.notify("Mason: Installing " .. tool_name .. "...", vim.log.levels.INFO)
 				p:install():once("closed", function()
 					if p:is_installed() then
-						vim.notify("Mason: Successfully installed " .. tool, vim.log.levels.INFO)
+						vim.notify("Mason: Successfully installed " .. tool_name, vim.log.levels.INFO)
+						if tool_name == "tree-sitter-cli" then
+							vim.api.nvim_exec_autocmds("User", { pattern = "MasonTreeSitterReady" })
+						end
 					else
-						vim.notify("Mason: Failed to install " .. tool, vim.log.levels.ERROR)
+						vim.notify("Mason: Failed to install " .. tool_name, vim.log.levels.ERROR)
 					end
 				end)
 			end
 		else
-			vim.notify("Mason: Package '" .. tool .. "' not found", vim.log.levels.WARN)
+			vim.notify("Mason: Package '" .. tool_name .. "' not found", vim.log.levels.WARN)
 		end
 	end
 end

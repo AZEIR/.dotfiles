@@ -84,7 +84,33 @@ if treesitter_ok then
 	}
 
 	treesitter.setup({})
-	treesitter.install(parsers)
+
+	local function has_c_compiler()
+		return vim.fn.executable("cc") == 1 or vim.fn.executable("gcc") == 1 or vim.fn.executable("clang") == 1
+	end
+
+	local function install_parsers()
+		if not has_c_compiler() then
+			vim.notify(
+				"Tree-sitter parsers need a C compiler; install build-essential (Ubuntu/Debian)",
+				vim.log.levels.WARN
+			)
+			return
+		end
+		treesitter.install(parsers)
+	end
+
+	if vim.fn.executable("tree-sitter") == 1 then
+		install_parsers()
+	else
+		vim.notify("Tree-sitter CLI is not available yet; Mason is installing it", vim.log.levels.INFO)
+		vim.api.nvim_create_autocmd("User", {
+			desc = "Install parsers after Mason installs the Tree-sitter CLI",
+			pattern = "MasonTreeSitterReady",
+			once = true,
+			callback = install_parsers,
+		})
+	end
 
 	vim.api.nvim_create_autocmd("FileType", {
 		desc = "Enable Tree-sitter highlighting",
