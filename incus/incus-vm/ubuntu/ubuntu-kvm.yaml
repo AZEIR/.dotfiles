@@ -57,22 +57,33 @@ config:
         FZF_URL=$(curl -s https://api.github.com/repos/junegunn/fzf/releases/latest | grep "browser_download_url.*linux_amd64.tar.gz" | cut -d '"' -f 4)
         curl -sSL "$FZF_URL" | tar -xz -C /usr/local/bin
 
-      # 4. Install latest stable Neovim binary
+      # 4. Install a Tree-sitter CLI compatible with Ubuntu 22.04 (glibc 2.35)
+      # v0.25.10 requires at most glibc 2.34; newer release binaries require 2.39.
+      - |
+        set -eu
+        TREE_SITTER_VERSION="v0.25.10"
+        wget -O /tmp/tree-sitter.gz "https://github.com/tree-sitter/tree-sitter/releases/download/${TREE_SITTER_VERSION}/tree-sitter-linux-x64.gz"
+        gzip -dc /tmp/tree-sitter.gz > /usr/local/bin/tree-sitter
+        chmod 0755 /usr/local/bin/tree-sitter
+        /usr/local/bin/tree-sitter --version
+        rm -f /tmp/tree-sitter.gz
+
+      # 5. Install latest stable Neovim binary
       - mkdir -p /opt
       - wget -O /tmp/nvim.tar.gz https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
       - tar -C /opt -xzf /tmp/nvim.tar.gz
       - ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
       - rm -f /tmp/nvim.tar.gz
 
-      # 5. Install Starship prompt globally
+      # 6. Install Starship prompt globally
       - wget -O /tmp/starship-install.sh https://starship.rs/install.sh
       - sh /tmp/starship-install.sh -y
       - rm -f /tmp/starship-install.sh
 
-      # 6. Change default shell to Zsh for ubuntu user
+      # 7. Change default shell to Zsh for ubuntu user
       - chsh -s /usr/bin/zsh ubuntu
 
-      # 7. Clone Dotfiles repo and Stow packages as 'ubuntu' user
+      # 8. Clone Dotfiles repo and Stow packages as 'ubuntu' user
       - |
         su - ubuntu -c '
           set -e
@@ -94,9 +105,10 @@ config:
           fi
         '
 
-      # 8. Headlessly trigger Neovim plugin sync (Lazy.nvim / Mason)
-      - su - ubuntu -c 'nvim --headless "+Lazy! sync" +qa 2>/dev/null || true'
+      # 9. Install native vim.pack plugins and parsers before first interactive use
+      - |
+        su - ubuntu -c 'nvim --headless "+lua require(\"nvim-treesitter\").install({\"asm\",\"c\",\"cpp\",\"lua\",\"vim\",\"vimdoc\",\"markdown\",\"markdown_inline\",\"python\",\"html\",\"css\",\"javascript\",\"typescript\",\"tsx\"}):wait(300000)" +qa'
 
-      # 9. Create user workspace and enforce ownership
+      # 10. Create user workspace and enforce ownership
       - mkdir -p /home/ubuntu/Code
       - chown -R ubuntu:ubuntu /home/ubuntu
