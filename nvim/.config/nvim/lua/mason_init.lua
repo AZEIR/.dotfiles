@@ -44,15 +44,28 @@ end
 
 local mr = require("mason-registry")
 
+local function tree_sitter_works()
+	if vim.fn.executable("tree-sitter") ~= 1 then
+		return false
+	end
+	return vim.system({ "tree-sitter", "--version" }, { text = true }):wait().code == 0
+end
+
 local function ensure_installed()
 	for _, tool in ipairs(tools) do
 		local tool_name = tool
 		if mr.has_package(tool_name) then
 			local p = mr.get_package(tool_name)
-			local available_on_path = tool_name == "tree-sitter-cli" and vim.fn.executable("tree-sitter") == 1
+			local available_on_path = tool_name == "tree-sitter-cli" and tree_sitter_works()
 			if not p:is_installed() and not available_on_path then
 				vim.notify("Mason: Installing " .. tool_name .. "...", vim.log.levels.INFO)
-				p:install():once("closed", function()
+				local install_options = nil
+				if tool_name == "tree-sitter-cli" then
+					-- Newer release binaries require glibc 2.39. Version 0.26.1 is
+					-- new enough for nvim-treesitter and runs on Ubuntu 22.04.
+					install_options = { version = "v0.26.1", force = true }
+				end
+				p:install(install_options):once("closed", function()
 					if p:is_installed() then
 						vim.notify("Mason: Successfully installed " .. tool_name, vim.log.levels.INFO)
 						if tool_name == "tree-sitter-cli" then
@@ -60,6 +73,16 @@ local function ensure_installed()
 						end
 					else
 						vim.notify("Mason: Failed to install " .. tool_name, vim.log.levels.ERROR)
+					end
+				end)
+			elseif tool_name == "tree-sitter-cli" and not available_on_path then
+				vim.notify("Mason: Replacing incompatible tree-sitter CLI...", vim.log.levels.INFO)
+				p:install({ version = "v0.26.1", force = true }):once("closed", function()
+					if tree_sitter_works() then
+						vim.notify("Mason: Successfully installed tree-sitter-cli", vim.log.levels.INFO)
+						vim.api.nvim_exec_autocmds("User", { pattern = "MasonTreeSitterReady" })
+					else
+						vim.notify("Mason: Failed to install a compatible tree-sitter-cli", vim.log.levels.ERROR)
 					end
 				end)
 			end

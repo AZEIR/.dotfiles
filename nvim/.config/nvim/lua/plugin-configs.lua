@@ -89,6 +89,13 @@ if treesitter_ok then
 		return vim.fn.executable("cc") == 1 or vim.fn.executable("gcc") == 1 or vim.fn.executable("clang") == 1
 	end
 
+	local function tree_sitter_works()
+		if vim.fn.executable("tree-sitter") ~= 1 then
+			return false
+		end
+		return vim.system({ "tree-sitter", "--version" }, { text = true }):wait().code == 0
+	end
+
 	local function install_parsers()
 		if not has_c_compiler() then
 			vim.notify(
@@ -100,10 +107,10 @@ if treesitter_ok then
 		treesitter.install(parsers)
 	end
 
-	if vim.fn.executable("tree-sitter") == 1 then
+	if tree_sitter_works() then
 		install_parsers()
 	else
-		vim.notify("Tree-sitter CLI is not available yet; Mason is installing it", vim.log.levels.INFO)
+		vim.notify("A compatible Tree-sitter CLI is not available yet; Mason is installing it", vim.log.levels.INFO)
 		vim.api.nvim_create_autocmd("User", {
 			desc = "Install parsers after Mason installs the Tree-sitter CLI",
 			pattern = "MasonTreeSitterReady",
