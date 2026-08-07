@@ -29,12 +29,6 @@ local tools = {
 	"yamlfmt",
 }
 
--- Mason builds asm-lsp from source, so only request it when Rust is available.
--- Assembly parsing and debugging still work without this optional language server.
-if vim.fn.executable("cargo") == 1 then
-	table.insert(tools, "asm-lsp")
-end
-
 mason.setup({})
 
 local is_win = vim.loop.os_uname().sysname == "Windows_NT"
