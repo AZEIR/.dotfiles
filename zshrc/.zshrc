@@ -1,7 +1,8 @@
-# Fo CTRL+Arrows key issue
+# Keyboard Shortcuts
 bindkey "^[[1;5D" backward-word
 bindkey "^[[1;5C" forward-word
 bindkey "^[[3~" delete-char
+
 # Automatically install zinit if it's not already installed
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 [ ! -d $ZINIT_HOME ] && mkdir -p "$(dirname $ZINIT_HOME)"
@@ -23,8 +24,8 @@ zinit ice wait"0" lucid atload"_zsh_autosuggest_start"
 zinit light zsh-users/zsh-autosuggestions
 
 # Load and initialise completion system
-autoload -Uz compinit
-compinit
+autoload -Uz compinit && compinit
+autoload -Uz bashcompinit && bashcompinit
 zinit cdreplay -q 
 
 # starship
@@ -57,6 +58,7 @@ export MANPAGER="nvim +Man!"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-alias cat='bat --paging=never'
+# alias cat='bat --paging=never'
 
+# pixi
 export PATH="/home/azeir/.pixi/bin:$PATH"
